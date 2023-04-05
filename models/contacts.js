@@ -29,7 +29,7 @@ const addContact = async (body) => {
     const newContacts = { id: v4(), ...body };
     contacts.push(newContacts);
     await fs.writeFile(contactsPath, JSON.stringify(contacts, null, 4));
-    return body;
+    return newContacts;
   } catch (error) {
     console.error(error.message);
   }
