@@ -1,68 +1,60 @@
-const contacts = require("../models/contacts");
+const { Contact } = require("../models/contacts");
+const { ctrlWrapper } = require("../helpers");
 
-const listContacts = async (req, res, next) => {
-  try {
-    const allContacts = await contacts.listContacts();
-    res.status(200).json(allContacts);
-  } catch (error) {
-    next(error);
-  }
+const listContacts = async (req, res) => {
+  const allContacts = await Contact.find({}, "-createdAt -updatedAt");
+  res.status(200).json(allContacts);
 };
 
-const getById = async (req, res, next) => {
-  try {
-    const contactId = req.params.id;
-    const result = await contacts.getById(contactId);
-    if (!result) {
-      return res.status(404).json({ message: "Contact not found" });
-    }
-    res.status(200).json(result);
-  } catch (error) {
-    next(error);
+const getById = async (req, res) => {
+  const contactId = req.params.id;
+  const result = await Contact.findById(contactId);
+  if (!result) {
+    return res.status(404).json({ message: "Contact not found" });
   }
+  res.status(200).json(result);
 };
 
-const addContact = async (req, res, next) => {
-  try {
-    const newContact = await contacts.addContact(req.body);
-    res.status(201).json(newContact);
-  } catch (error) {
-    next(error);
-  }
+const addContact = async (req, res) => {
+  const newContact = await Contact.create(req.body);
+  res.status(201).json(newContact);
 };
 
-const removeContact = async (req, res, next) => {
+const removeContact = async (req, res) => {
   const { id } = req.params;
-  try {
-    const result = await contacts.removeContact(id);
-    if (!result) {
-      return res.status(404).json({ message: "Not found" });
-    }
-    res.status(200).json({ message: "Contact deleted" });
-  } catch (error) {
-    next(error);
+  const result = await Contact.findByIdAndRemove(id);
+  if (!result) {
+    return res.status(404).json({ message: "Not found" });
   }
+  res.status(200).json({ message: "Contact deleted" });
 };
 
 const updateContact = async (req, res, next) => {
   const { id } = req.params;
-
-  try {
-    const updatedContact = await contacts.updateContact(id, req.body);
-    if (!updatedContact) {
-      return res.status(404).json({ message: "Not found" });
-    }
-
-    res.status(200).json(updatedContact);
-  } catch (error) {
-    next(error);
+  const updatedContact = await Contact.findByIdAndUpdate(id, req.body, {
+    new: true,
+  });
+  if (!updatedContact) {
+    return res.status(404).json({ message: "Not found" });
   }
+
+  res.status(200).json(updatedContact);
+};
+
+const updateStatusContact = async (req, res) => {
+  const { id } = req.params;
+  const result = await Contact.findByIdAndUpdate(id, req.body, { new: true });
+  if (!result) {
+    return res.status(404).json({ message: "Not found" });
+  }
+  res.json(result);
 };
 
 module.exports = {
-  listContacts,
-  getById,
-  addContact,
-  removeContact,
-  updateContact,
+  listContacts: ctrlWrapper(listContacts),
+  getById: ctrlWrapper(getById),
+  addContact: ctrlWrapper(addContact),
+  removeContact: ctrlWrapper(removeContact),
+  updateStatusContact: ctrlWrapper(updateStatusContact),
+  updateContact: ctrlWrapper(updateContact),
 };
