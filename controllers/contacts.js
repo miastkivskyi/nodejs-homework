@@ -1,8 +1,18 @@
 const { Contact } = require("../models/contacts");
-const { ctrlWrapper } = require("../helpers");
+const { ctrlWrapper, httpError } = require("../helpers");
 
 const listContacts = async (req, res) => {
-  const allContacts = await Contact.find({}, "-createdAt -updatedAt");
+  const { id } = req.user;
+  const { page = 1, limit = 20, favorite = [true, false] } = req.query;
+  const skip = (page - 1) * limit;
+
+  const allContacts = await Contact.find(
+    { owner: id, favorite },
+    "-createdAt -updatedAt"
+  )
+    .populate("owner", "_id email")
+    .skip(skip)
+    .limit(parseInt(limit));
   res.status(200).json(allContacts);
 };
 
@@ -16,7 +26,13 @@ const getById = async (req, res) => {
 };
 
 const addContact = async (req, res) => {
-  const newContact = await Contact.create(req.body);
+  const { _id: owner } = req.user;
+  const { name } = req.body;
+  const result = await Contact.findOne({ name });
+  if (result) {
+    throw httpError(409, "Contact already exists");
+  }
+  const newContact = await Contact.create({ ...req.body, owner });
   res.status(201).json(newContact);
 };
 
